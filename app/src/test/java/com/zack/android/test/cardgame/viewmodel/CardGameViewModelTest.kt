@@ -4,14 +4,23 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.google.common.truth.Truth.assertThat
 import com.zack.android.test.cardgame.LiveDataTestUtil
 import com.zack.android.test.cardgame.data.Card
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
-
 import org.junit.Test
 
+@ExperimentalCoroutinesApi
 class CardGameViewModelTest {
     @get:Rule
     var instantExecutorRule = InstantTaskExecutorRule()
+
+    private val testDispatcher = TestCoroutineDispatcher()
 
     private lateinit var viewModel: CardGameViewModel
     private val cards = listOf(
@@ -23,8 +32,15 @@ class CardGameViewModelTest {
 
     @Before
     fun setUp() {
+        Dispatchers.setMain(testDispatcher)
         viewModel = CardGameViewModel(2)
         viewModel.setSampleCards(cards)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+        testDispatcher.cleanupTestCoroutines()
     }
 
     @Test
@@ -49,34 +65,37 @@ class CardGameViewModelTest {
     }
 
     @Test
-    fun flipCard_flipDifferentValueCards_stepIncreaseTwice_flipBackOneSecondLater() {
-        viewModel.flipCard(0)
-        assertThat(LiveDataTestUtil.getValue(viewModel.flipCardLiveData)).isEqualTo(0)
-        assertThat((LiveDataTestUtil.getValue(viewModel.stepsLiveData))).isEqualTo(1)
+    fun flipCard_flipDifferentValueCards_stepIncreaseTwice_flipBackOneSecondLater() =
+        testDispatcher.runBlockingTest {
+            viewModel.flipCard(0)
+            assertThat(LiveDataTestUtil.getValue(viewModel.flipCardLiveData)).isEqualTo(0)
+            assertThat((LiveDataTestUtil.getValue(viewModel.stepsLiveData))).isEqualTo(1)
 
-        // flip second card of different value
-        viewModel.flipCard(2)
-        assertThat(LiveDataTestUtil.getValue(viewModel.flipCardLiveData)).isEqualTo(2)
-        assertThat((LiveDataTestUtil.getValue(viewModel.stepsLiveData))).isEqualTo(2)
-        viewModel.cardFlipped()
+            // flip second card of different value
+            viewModel.flipCard(2)
+            assertThat(LiveDataTestUtil.getValue(viewModel.flipCardLiveData)).isEqualTo(2)
+            assertThat((LiveDataTestUtil.getValue(viewModel.stepsLiveData))).isEqualTo(2)
+            viewModel.cardFlipped()
 
-        Thread.sleep(1_000) // wait 1 second later
-        assertThat(LiveDataTestUtil.getValue(viewModel.flipCardLiveData)).isEqualTo(2)
-    }
+            // flip card is triggered after 1 second delay
+            advanceTimeBy(1_000)
+            assertThat(LiveDataTestUtil.getValue(viewModel.flipCardLiveData)).isEqualTo(2)
+        }
 
     @Test
-    fun flipCard_flipSameValueCards_neverFlipBackAgain() {
+    fun flipCard_flipSameValueCards_neverFlipBackAgain() = testDispatcher.runBlockingTest {
         viewModel.flipCard(0)
         assertThat(LiveDataTestUtil.getValue(viewModel.flipCardLiveData)).isEqualTo(0)
         assertThat((LiveDataTestUtil.getValue(viewModel.stepsLiveData))).isEqualTo(1)
 
         // flip second card of same value
+        viewModel.flipCard(1)
         assertThat(LiveDataTestUtil.getValue(viewModel.flipCardLiveData)).isEqualTo(1)
         assertThat((LiveDataTestUtil.getValue(viewModel.stepsLiveData))).isEqualTo(2)
         viewModel.cardFlipped()
 
         // after 1 second never trigger to flip back again
-        Thread.sleep(1_000)
+        advanceTimeBy(1_000)
         assertThat(LiveDataTestUtil.getValue(viewModel.flipCardLiveData)).isEqualTo(-1)
     }
 
