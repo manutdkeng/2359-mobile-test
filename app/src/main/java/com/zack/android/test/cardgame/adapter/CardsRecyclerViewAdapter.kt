@@ -24,10 +24,6 @@ class CardsRecyclerViewAdapter(
         notifyDataSetChanged()
     }
 
-    fun getAllItems(): List<Card> {
-        return cards
-    }
-
     fun getItem(position: Int): Card {
         return cards[position]
     }

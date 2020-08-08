@@ -2,7 +2,7 @@ package com.zack.android.test.cardgame.activity
 
 import android.os.Bundle
 import android.widget.TextView
-import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -57,7 +57,7 @@ class CardGameActivity : AppCompatActivity() {
                 }
             }
         })
-        viewModel.closeAllCardsLiveData.observe(this, Observer {positions ->
+        viewModel.closeAllCardsLiveData.observe(this, Observer { positions ->
             positions?.let {
                 closeRevealedCards(it)
                 viewModel.closedAllCards()
@@ -72,13 +72,28 @@ class CardGameActivity : AppCompatActivity() {
                 viewModel.cardFlipped()
             }
         })
-        viewModel.showCompletedDialogLiveData.observe(this, Observer {
-            Toast.makeText(this, "Completed!", Toast.LENGTH_LONG).show()
+        viewModel.showCompletedDialogLiveData.observe(this, Observer { show ->
+            if (show) {
+                displayCompleteDialog()
+            }
         })
     }
 
+    private fun displayCompleteDialog() {
+        val builder = AlertDialog.Builder(this)
+            .setMessage(getString(R.string.dialog_msg, steps.text))
+            .setTitle(R.string.dialog_title)
+            .setCancelable(false)
+            .setPositiveButton(R.string.dialog_button) { _, _ ->
+                viewModel.dialogShown()
+                viewModel.reset()
+            }
+
+        builder.create().show()
+    }
+
     private fun closeRevealedCards(positions: MutableList<Int>) {
-        for(pos in positions) {
+        for (pos in positions) {
             val holder = cardsView.findViewHolderForAdapterPosition(pos)
             if (holder != null) {
                 (holder.itemView as CardView).flipCard(false)
@@ -95,7 +110,7 @@ class CardGameActivity : AppCompatActivity() {
     }
 
     private fun createAdapter(cards: MutableList<Card>) {
-        adapter = CardsRecyclerViewAdapter(cards) {position ->
+        adapter = CardsRecyclerViewAdapter(cards) { position ->
             viewModel.flipCard(position)
         }
         cardsView.adapter = adapter

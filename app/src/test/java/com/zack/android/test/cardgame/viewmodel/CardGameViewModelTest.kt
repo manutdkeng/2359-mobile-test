@@ -116,6 +116,8 @@ class CardGameViewModelTest {
         assertThat((LiveDataTestUtil.getValue(viewModel.stepsLiveData))).isEqualTo(4)
 
         assertThat(LiveDataTestUtil.getValue(viewModel.showCompletedDialogLiveData)).isTrue()
+        viewModel.dialogShown()
+        assertThat(LiveDataTestUtil.getValue(viewModel.showCompletedDialogLiveData)).isFalse()
     }
 
     @Test
@@ -130,6 +132,9 @@ class CardGameViewModelTest {
             assertThat(it[0]).isEqualTo(0)
             assertThat(it[1]).isEqualTo(1)
         }
+
+        viewModel.closedAllCards()
+        assertThat(LiveDataTestUtil.getValue(viewModel.closeAllCardsLiveData)).isNull()
     }
 
     @Test

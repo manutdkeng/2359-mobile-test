@@ -6,4 +6,8 @@
     <string name="restart">Restart</string>
     <string name="default_value">0</string>
     <string name="steps">steps:</string>
+
+    <string name="dialog_title">Congratulations!</string>
+    <string name="dialog_msg">You win this game by %1$s steps!</string>
+    <string name="dialog_button">Try another round</string>
 </resources>
