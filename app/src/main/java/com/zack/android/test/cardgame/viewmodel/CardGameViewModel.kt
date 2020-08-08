@@ -1,10 +1,7 @@
 package com.zack.android.test.cardgame.viewmodel
 
 import androidx.annotation.VisibleForTesting
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.zack.android.test.cardgame.data.Card
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -13,13 +10,17 @@ class CardGameViewModel(private val pairSize: Int) : ViewModel() {
     private var cards: MutableList<Card> = mutableListOf()
     private var flippedPosition: MutableList<Int> = mutableListOf()
 
-    private val _cardsLiveData = MutableLiveData<List<Card>>()
-    val cardsLiveData: LiveData<List<Card>>
+    private val _cardsLiveData = MutableLiveData<MutableList<Card>>()
+    val cardsLiveData: LiveData<MutableList<Card>>
         get() = _cardsLiveData
 
     private val _flipCardLiveData = MutableLiveData<Int>()
     val flipCardLiveData: LiveData<Int>
         get() = _flipCardLiveData
+
+    private val _closeAllCardsLiveData = MutableLiveData<MutableList<Int>?>()
+    val closeAllCardsLiveData: LiveData<MutableList<Int>?>
+        get() = _closeAllCardsLiveData
 
     private val _stepsLiveData = MutableLiveData<Int>()
     val stepsLiveData: LiveData<Int>
@@ -29,8 +30,16 @@ class CardGameViewModel(private val pairSize: Int) : ViewModel() {
     val showCompletedDialogLiveData: LiveData<Boolean>
         get() = _showCompletedDialogLiveData
 
+    init {
+        generateCards()
+    }
+
     fun dialogShown() {
-        _showCompletedDialogLiveData.value =false
+        _showCompletedDialogLiveData.value = false
+    }
+
+    fun closedAllCards() {
+        _closeAllCardsLiveData.value = null
     }
 
     fun flipCard(position: Int) {
@@ -90,8 +99,20 @@ class CardGameViewModel(private val pairSize: Int) : ViewModel() {
 
 
     fun reset() {
-        generateCards()
+        closeAllRevealedCards()
         _stepsLiveData.value = 0
+        flippedPosition.clear()
+        viewModelScope.launch {
+            // delay generate new cards for closing animation
+            delay(600)
+            generateCards()
+        }
+    }
+
+    private fun closeAllRevealedCards() {
+        val position = mutableListOf<Int>()
+        position.addAll(flippedPosition)
+        _closeAllCardsLiveData.value = position
     }
 
     private fun generateCards() {
@@ -100,7 +121,7 @@ class CardGameViewModel(private val pairSize: Int) : ViewModel() {
         // generate pairSize of random unique number
         val numSet = mutableSetOf<Int>()
         while (numSet.size < pairSize) {
-            numSet.add((0..100).random())
+            numSet.add((1..100).random())
         }
 
         val appearedNum = mutableSetOf<Int>()
@@ -122,5 +143,14 @@ class CardGameViewModel(private val pairSize: Int) : ViewModel() {
     fun setSampleCards(cards: List<Card>) {
         this.cards.clear()
         this.cards.addAll(cards)
+    }
+}
+
+class CardGameViewModelFactory(private val pairSize: Int) : ViewModelProvider.Factory {
+    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(CardGameViewModel::class.java)) {
+            return CardGameViewModel(pairSize) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

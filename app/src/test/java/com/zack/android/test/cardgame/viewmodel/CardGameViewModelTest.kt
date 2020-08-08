@@ -119,25 +119,41 @@ class CardGameViewModelTest {
     }
 
     @Test
-    fun reset_differentCardsGenerated_stepResetToZero() {
+    fun reset_closeRevealedCards() = testDispatcher.runBlockingTest{
+        viewModel.flipCard(0)
+        viewModel.flipCard(1)
+
+        viewModel.reset()
+        val positions = LiveDataTestUtil.getValue(viewModel.closeAllCardsLiveData)
+        assertThat(positions).isNotNull()
+        positions?.let {
+            assertThat(it[0]).isEqualTo(0)
+            assertThat(it[1]).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun reset_differentCardsGenerated_stepResetToZero() = testDispatcher.runBlockingTest {
         viewModel.reset()
 
+        assertThat(LiveDataTestUtil.getValue(viewModel.stepsLiveData)).isEqualTo(0)
+
+        advanceTimeBy(600)
         val newCards = LiveDataTestUtil.getValue(viewModel.cardsLiveData)
         assertThat(newCards.size).isEqualTo(cards.size)
         assertThat(newCards[0].value).isNotEqualTo(cards[0].value)
         assertThat(newCards[1].value).isNotEqualTo(cards[1].value)
         assertThat(newCards[2].value).isNotEqualTo(cards[2].value)
         assertThat(newCards[3].value).isNotEqualTo(cards[3].value)
-
-        assertThat(LiveDataTestUtil.getValue(viewModel.stepsLiveData)).isEqualTo(0)
     }
 
     @Test
-    fun generatedCards_alwaysDoubleOfPairValue_pairValueSetOfSameValueCards() {
+    fun generatedCards_alwaysDoubleOfPairValue_pairValueSetOfSameValueCards() = testDispatcher.runBlockingTest{
         val pairSize = 3
         viewModel = CardGameViewModel(pairSize)
         viewModel.reset() // generate new set of cards
 
+        advanceTimeBy(600)
         val newCards = LiveDataTestUtil.getValue(viewModel.cardsLiveData)
         assertThat(newCards.size).isEqualTo(pairSize * 2) // double of the pair size
 

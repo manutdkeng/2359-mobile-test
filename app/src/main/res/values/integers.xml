@@ -2,4 +2,5 @@
 <resources>
     <integer name="flip_duration">500</integer>
     <integer name="offset">250</integer>
+    <integer name="num_of_col">3</integer>
 </resources>

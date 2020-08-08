@@ -26,7 +26,7 @@ class CardView(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) :
 
     init {
         View.inflate(context, R.layout.view_card, this)
-        valueTextView = findViewById(R.id.value)
+        valueTextView = findViewById(R.id.steps)
         frontView = findViewById(R.id.front_view)
         backView = findViewById(R.id.back_view)
 
@@ -46,6 +46,16 @@ class CardView(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) :
 
     fun setValue(value: String) {
         valueTextView.text = value
+    }
+
+    fun setInitialView(open: Boolean) {
+        if (open) {
+            frontView.alpha = 1f
+            backView.alpha = 0f
+        } else {
+            frontView.alpha = 0f
+            backView.alpha = 1f
+        }
     }
 
     fun flipCard(open: Boolean) {
